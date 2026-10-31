@@ -1,37 +1,48 @@
-name: Build Peridot Kernel via Repo Script
+name: Build Android Kernel (peridot)
 
 on:
-  workflow_dispatch: # Запуск сборки вручную кнопкой на GitHub
+  workflow_dispatch: # Позволяет запускать сборку вручную из вкладки Actions
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # Окружение со всеми нужными зависимостями
+    name: Build Kernel
+    runs-on: ubuntu-24.04
+
     steps:
-      - name: Checkout Kernel Source and Script
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1 # Скачивает ваш репозиторий вместе с файлом build_6.1.sh
+    - name: Free Disk Space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: true
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
 
-      - name: Install Build Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y bc build-essential libncurses5-dev libssl-dev xz-utils bzip2 gzip cpio libelf-dev git lz4 tar libtinfo5 python3
+    - name: Clone Kernel Source
+      run: |
+        git clone --depth=1 -b peridot-u-oss https://github.com kernel-source
+        
+    - name: Download and Patch Build Script
+      run: |
+        cd kernel-source
+        wget https://githubusercontent.com -O build.sh
+        
+        # Отключаем интерактивное меню menuconfig, чтобы скрипт не зависал в GitHub Actions
+        sed -i 's/MENUCONFIG=1/MENUCONFIG=0/g' build.sh
+        
+        chmod +x build.sh
 
-      - name: Make Script Executable
-        run: |
-          # Выдаем права на запуск вашему скрипту, который уже находится в корне
-          chmod +x build_6.1.sh
+    - name: Run Build Script
+      run: |
+        cd kernel-source
+        # Запускаем сборку (скрипт сам установит нужные apt-пакеты и скачает Clang)
+        ./build.sh
 
-      - name: Run Your Build Script
-        run: |
-          # Запуск скрипта. Он сам скачает Clang, настроит PATH и начнет сборку
-          ./build_6.1.sh
-
-      - name: Upload Kernel Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: peridot-kernel-image
-          path: |
-            build/Image
-            build/Image.gz
-          if-no-files-found: error
+    - name: Upload Kernel Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Compiled-Kernel-Peridot
+        path: kernel-source/build/
+        if-no-files-found: error
