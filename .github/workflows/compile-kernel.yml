@@ -1,64 +1,44 @@
-name: Build Xiaomi Peridot Kernel (Kleaf)
+name: Build Peridot Kernel via Build Script
 
 on:
-  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой на GitHub
+  workflow_dispatch: # Запуск сборки вручную кнопкой на GitHub
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # Используем стабильное окружение со всеми библиотеками
+    runs-on: ubuntu-22.04 # Оптимальное окружение для зависимостей скрипта
     steps:
       - name: Checkout Kernel Source
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Install Build Dependencies
+      - name: Download Build Script
         run: |
-          sudo apt update
-          sudo apt install -y build-essential bc bison flex pkg-config git curl tar xz-utils zip unzip cpio rsync
-          kmod perl python3 python-is-python3 libssl-dev libelf-dev pahole libncurses-dev
-          zlib1g-dev libyaml-dev lz4 zstd device-tree-compiler
+          # Скачиваем скрипт, на который вы дали ссылку
+          wget https://githubusercontent.com -O build_6.1.sh
+          chmod +x build_6.1.sh
 
-      - name: Download and Setup Your Clang Toolchain
+      - name: Patch Script for GitHub Actions
         run: |
-          mkdir -p clang
-          cd clang
-          # Скачиваем предоставленный тулчейн Clang r510928
-          wget https://github.com
-          tar -xf clang-r510928.tar.gz
-          rm clang-r510928.tar.gz
-          # Прописываем путь к бинарникам компилятора в PATH виртуальной машины
-          echo "$(pwd)/bin" >> $GITHUB_PATH
-
-      - name: Build Kernel via Build Script
-        env:
-          ARCH: arm64
-          SUBARCH: arm64
-          CLANG_TRIPLE: aarch64-linux-gnu-
-          CROSS_COMPILE: aarch64-linux-android-
-          CROSS_COMPILE_COMPAT: arm-linux-androideabi-
-          # Указываем Kleaf использовать LLVM/Clang вместо GCC
-          LD: ld.lld
-          AR: llvm-ar
-          NM: llvm-nm
-          OBJCOPY: llvm-objcopy
-          OBJDUMP: llvm-objdump
-          READELF: llvm-readelf
-          STRIP: llvm-strip
-        run: |
-          # В репозитории Xiaomi используется официальный скрипт сборки build.sh
-          # build.config.gki.aarch64 подхватывает основные параметры архитектуры
+          # Отключаем интерактивное меню menuconfig, чтобы сборка на GitHub не зависала
+          sed -i 's/MENUCONFIG=1/MENUCONFIG=0/g' build_6.1.sh
           
-          chmod +x ./build/build.sh
-          BUILD_CONFIG=build.config.gki.aarch64 ./build/build.sh LLVM=1 LLVM_IAS=1
+          # Настраиваем дефконфиг под Xiaomi (сверяем с вашими исходниками)
+          # Если peridot_defconfig нет, скрипт автоматически использует gki_defconfig
+          if [ -f "arch/arm64/configs/peridot_defconfig" ]; then
+            sed -i 's/DEFCONFIG="gki_defconfig"/DEFCONFIG="peridot_defconfig"/g' build_6.1.sh
+          fi
+
+      - name: Run Build Script
+        run: |
+          # Запускаем адаптированный скрипт сборки
+          ./build_6.1.sh
 
       - name: Upload Kernel Artifact
         uses: actions/upload-artifact@v4
         with:
           name: peridot-kernel-image
           path: |
-            out/android-mainline/dist/Image
-            out/android-mainline/dist/Image.gz
-            out/android-mainline/dist/Image.lz4
-            out/android-mainline/dist/*.ko
+            build/Image
+            build/Image.gz
           if-no-files-found: error
