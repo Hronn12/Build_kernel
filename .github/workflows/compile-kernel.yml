@@ -15,7 +15,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt update
-          sudo apt install -y bc build-essential libncurses5-dev libssl-dev xz-utils bzip2 gzip cpio libelf-dev git lz4 tar libtinfo5
+          sudo apt install -y bc build-essential libncurses5-dev libssl-dev xz-utils bzip2 gzip cpio libelf-dev git lz4 tar libtinfo6
 
       - name: Download AOSP Clang
         run: |
