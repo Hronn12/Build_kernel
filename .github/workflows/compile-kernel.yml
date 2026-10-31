@@ -1,37 +1,30 @@
-name: Build Peridot Kernel via Build Script
+name: Build Peridot Kernel via Repo Script
 
 on:
   workflow_dispatch: # Запуск сборки вручную кнопкой на GitHub
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # Оптимальное окружение для зависимостей скрипта
+    runs-on: ubuntu-22.04 # Окружение со всеми нужными зависимостями
     steps:
-      - name: Checkout Kernel Source
+      - name: Checkout Kernel Source and Script
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 1 # Скачивает ваш репозиторий вместе с файлом build_6.1.sh
 
-      - name: Download Build Script
+      - name: Install Build Dependencies
         run: |
-          # Скачиваем скрипт, на который вы дали ссылку
-          wget build_scripts/build_6.1.sh -O build_6.1.sh
+          sudo apt update
+          sudo apt install -y bc build-essential libncurses5-dev libssl-dev xz-utils bzip2 gzip cpio libelf-dev git lz4 tar libtinfo5 python3
+
+      - name: Make Script Executable
+        run: |
+          # Выдаем права на запуск вашему скрипту, который уже находится в корне
           chmod +x build_6.1.sh
 
-      - name: Patch Script for GitHub Actions
+      - name: Run Your Build Script
         run: |
-          # Отключаем интерактивное меню menuconfig, чтобы сборка на GitHub не зависала
-          sed -i 's/MENUCONFIG=1/MENUCONFIG=0/g' build_6.1.sh
-          
-          # Настраиваем дефконфиг под Xiaomi (сверяем с вашими исходниками)
-          # Если peridot_defconfig нет, скрипт автоматически использует gki_defconfig
-          if [ -f "arch/arm64/configs/peridot_defconfig" ]; then
-            sed -i 's/DEFCONFIG="gki_defconfig"/DEFCONFIG="peridot_defconfig"/g' build_6.1.sh
-          fi
-
-      - name: Run Build Script
-        run: |
-          # Запускаем адаптированный скрипт сборки
+          # Запуск скрипта. Он сам скачает Clang, настроит PATH и начнет сборку
           ./build_6.1.sh
 
       - name: Upload Kernel Artifact
