@@ -27,12 +27,12 @@ jobs:
     - name: Download and Patch Build Script
       run: |
         cd kernel-source
-        wget https://githubusercontent.com -O build.sh
+        wget https://raw.githubusercontent.com/Hronn12/Build_kernel/main/build_6.1.sh
         
         # Отключаем интерактивное меню menuconfig, чтобы скрипт не зависал в GitHub Actions
         sed -i 's/MENUCONFIG=1/MENUCONFIG=0/g' build.sh
         
-        chmod +x build.sh
+        chmod +x build_6.1.sh
 
     - name: Run Build Script
       run: |
