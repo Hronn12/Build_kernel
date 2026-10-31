@@ -22,7 +22,7 @@ jobs:
 
     - name: Clone Kernel Source
       run: |
-        git clone --depth=1 -b peridot-u-oss https://github.com kernel-source
+        git clone https://github.com/MiCode/Xiaomi_Kernel_OpenSource --depth=1 -b peridot-u-oss kernel-source
         
     - name: Download and Patch Build Script
       run: |
