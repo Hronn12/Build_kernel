@@ -12,13 +12,6 @@ jobs:
     - name: Free Disk Space
       uses: jlumbroso/free-disk-space@main
       with:
-        tool-cache: true
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: true
 
     - name: Clone Kernel Source
       run: |
@@ -34,6 +27,7 @@ jobs:
     - name: Run Build Script
       run: |
         # Запускаем сборку (скрипт сам установит нужные apt-пакеты и скачает Clang)
+        cd kernel-source
         ./build.sh
 
     - name: Upload Kernel Artifacts
