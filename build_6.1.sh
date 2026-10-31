@@ -17,7 +17,7 @@ DEFCONFIG="gki_defconfig"      # name from arch/arm64/configs (also: vendor/foo_
 EXTRA_CONFIGS=()               # fragments merged on top, e.g. (custom.config)
 KERNEL_IMAGE="Image"           # Image | Image.gz | Image.gz-dtb  (MediaTek needs Image.gz)
 USE_OUT_DIR=1                  # 0 = build in-tree; most Samsung Exynos trees need 0
-MENUCONFIG=1                   # 0 = skip the menuconfig GUI
+MENUCONFIG=0                   # 0 = skip the menuconfig GUI
 export KBUILD_BUILD_USER="@ravindu644"
 
 # Some OEM trees need extra variables -- check README_Kernel.txt or build_kernel.sh:
