@@ -1,0 +1,52 @@
+name: Build Peridot Kernel
+
+on:
+  workflow_dispatch: # Позволяет запускать сборку вручную одной кнопкой
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y bc build-essential libncurses5-dev libssl-dev xz-utils bzip2 gzip cpio libelf-dev git lz4 tar libtinfo5
+
+      - name: Download AOSP Clang
+        run: |
+          mkdir -p clang
+          cd clang
+          # Скачиваем стабильную версию Clang из репозиториев Google
+          wget https://googlesource.com
+          tar -xf clang-r522817.tar.gz
+          rm clang-r522817.tar.gz
+          echo "$(pwd)/bin" >> $GITHUB_PATH
+
+      - name: Build Kernel
+        env:
+          ARCH: arm64
+          SUBARCH: arm64
+          CLANG_TRIPLE: aarch64-linux-gnu-
+          CROSS_COMPILE: aarch64-linux-android-
+          CROSS_COMPILE_COMPAT: arm-linux-androideabi-
+        run: |
+          # Укажите точное название дефконфига из вашего дерева (обычно gki_defconfig или peridot_defconfig)
+          BUILD_CONFIG=gki_defconfig 
+          
+          make O=out $BUILD_CONFIG
+          make -j$(nproc) O=out LLVM=1 LLVM_IAS=1
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: peridot-kernel-image
+          path: |
+            out/arch/arm64/boot/Image
+            out/arch/arm64/boot/Image.gz
+            out/arch/arm64/boot/Image.lz4
+          if-no-files-found: error
