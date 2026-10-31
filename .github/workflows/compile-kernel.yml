@@ -15,7 +15,7 @@ jobs:
       - name: Download Build Script
         run: |
           # Скачиваем скрипт, на который вы дали ссылку
-          wget https://githubusercontent.com -O build_6.1.sh
+          wget https://github.com/ravindu644/Android-Kernel-Tutorials/blob/main/build_scripts -O build_6.1.sh
           chmod +x build_6.1.sh
 
       - name: Patch Script for GitHub Actions
