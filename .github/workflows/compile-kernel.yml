@@ -148,7 +148,7 @@ jobs:
 
           grep -nE 'videodev2|ispv4_defs' usr/include/Makefile
 
-      - name: Check missing HWID references in DWC3
+      - name: Fix missing HWID header in DWC3
         working-directory: kernel-workspace/msm-kernel
         shell: bash
         run: |
@@ -156,16 +156,18 @@ jobs:
 
           FILE="drivers/usb/dwc3/dwc3-msm-core.c"
 
-          echo "=== HWID references ==="
-          grep -n -iE 'hwid|hardware.?id' "$FILE" || true
+          grep -nF '#include "../../misc/hwid/hwid.h"' "$FILE"
 
-          echo "=== Include line ==="
-          grep -nF '#include "../../misc/hwid/hwid.h"' "$FILE" || true
+          sed -i \
+            '\|#include "../../misc/hwid/hwid.h"|d' \
+            "$FILE"
 
-          echo "=== Check header availability ==="
-          test -f drivers/misc/hwid/hwid.h \
-            && echo "HWID header exists" \
-            || echo "HWID header is missing"
+          if grep -qF '#include "../../misc/hwid/hwid.h"' "$FILE"; then
+            echo "HWID include was not removed"
+            exit 1
+          fi
+
+          echo "Missing HWID include removed successfully"
       
       - name: Configure and compile Image
         shell: bash
