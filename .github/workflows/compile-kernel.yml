@@ -76,6 +76,36 @@ jobs:
             echo "HWID Kconfig entry was not removed"
             exit 1
           fi
+      - name: Fix ispv4_defs.h header dependencies
+        working-directory: kernel-workspace/msm-kernel
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          HDR=$(find . \
+            -path './usr/include/*' -prune -o \
+            -name 'ispv4_defs.h' -print -quit)
+
+          test -n "$HDR"
+          echo "Patching: $HDR"
+
+          python3 - "$HDR" <<'PY'
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          data = path.read_text()
+
+          if "#include <stdint.h>" not in data:
+              data = "#include <stdint.h>\n" + data
+
+          if "#include <time.h>" not in data:
+              data = "#include <time.h>\n" + data
+
+          path.write_text(data)
+          PY
+
+          head -15 "$HDR"
           
       - name: Configure and compile Image
         shell: bash
