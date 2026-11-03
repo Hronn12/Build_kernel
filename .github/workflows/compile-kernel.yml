@@ -107,6 +107,15 @@ jobs:
 
           head -15 "$HDR"
           
+      - name: Show remaining compiler error
+        if: always()
+        shell: bash
+        run: |
+          if [ -f kernel-workspace/build.log ]; then
+            grep -n -B 8 -A 8 "error:" \
+              kernel-workspace/build.log | tail -40
+          fi
+          
       - name: Configure and compile Image
         shell: bash
         run: |
@@ -150,6 +159,7 @@ jobs:
             CROSS_COMPILE=aarch64-linux-gnu- \
             CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
             -j8 Image modules dtbs
+            2>&1 | tee "$WORKSPACE_DIR/build.log"
 
           test -s "$OUT/arch/arm64/boot/Image"
           mkdir -p "$WORKSPACE_DIR/dist"
