@@ -62,6 +62,21 @@ jobs:
           test -f "$WORKSPACE_DIR/msm-kernel/arch/arm64/configs/vendor/pineapple_GKI.config"
           test -f "$WORKSPACE_DIR/msm-kernel/arch/arm64/configs/vendor/peridot_GKI.config"
 
+      - name: Fix missing HWID Kconfig entry
+        working-directory: kernel-workspace/msm-kernel
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          sed -i \
+            '\|source "drivers/misc/hwid/Kconfig"|d' \
+            drivers/misc/Kconfig
+
+          if grep -q 'drivers/misc/hwid/Kconfig' drivers/misc/Kconfig; then
+            echo "HWID Kconfig entry was not removed"
+            exit 1
+          fi
+          
       - name: Configure and compile Image
         shell: bash
         run: |
