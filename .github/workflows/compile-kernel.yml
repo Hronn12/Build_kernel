@@ -76,6 +76,30 @@ jobs:
             echo "HWID Kconfig entry was not removed"
             exit 1
           fi
+
+      - name: Fix missing HWID header include
+        working-directory: kernel-workspace/msm-kernel
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          FILE="drivers/soc/qcom/wcd939x-i2c.c"
+
+          grep -nF \
+            '#include "../../misc/hwid/hwid.h"' "$FILE"
+
+          sed -i \
+            '\|#include "../../misc/hwid/hwid.h"|d' \
+            "$FILE"
+
+          if grep -qF \
+            '#include "../../misc/hwid/hwid.h"' "$FILE"; then
+            echo "HWID include was not removed"
+            exit 1
+          fi
+
+          echo "HWID include successfully removed"
+      
       - name: Fix ispv4_defs.h header dependencies
         working-directory: kernel-workspace/msm-kernel
         shell: bash
@@ -166,7 +190,7 @@ jobs:
             ARCH=arm64 LLVM=1 LLVM_IAS=1 \
             CROSS_COMPILE=aarch64-linux-gnu- \
             CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
-            -j8 Image modules dtbs
+            -j8 Image modules dtbs \
             2>&1 | tee "$WORKSPACE_DIR/build.log"
 
           test -s "$OUT/arch/arm64/boot/Image"
