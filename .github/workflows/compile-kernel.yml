@@ -14,7 +14,7 @@ jobs:
   build:
     # Register a self-hosted Linux x86_64 runner with label kernel-builder.
     # Recommended: 16+ GB RAM and at least 60 GB free disk space.
-    runs-on: [self-hosted, Linux, X64, kernel-builder]
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
 
     env:
