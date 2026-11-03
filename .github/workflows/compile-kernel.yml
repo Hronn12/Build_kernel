@@ -106,16 +106,7 @@ jobs:
           PY
 
           head -15 "$HDR"
-          
-      - name: Show remaining compiler error
-        if: always()
-        shell: bash
-        run: |
-          if [ -f kernel-workspace/build.log ]; then
-            grep -n -B 8 -A 8 "error:" \
-              kernel-workspace/build.log | tail -40
-          fi
-          
+      
       - name: Configure and compile Image
         shell: bash
         run: |
@@ -168,6 +159,15 @@ jobs:
           test -s "$WORKSPACE_DIR/dist/Image"
           sha256sum "$WORKSPACE_DIR/dist/Image" | tee "$WORKSPACE_DIR/dist/SHA256SUMS"
 
+      - name: Show remaining compiler error
+        if: always()
+        shell: bash
+        run: |
+          if [ -f kernel-workspace/build.log ]; then
+            grep -n -B 8 -A 8 "error:" \
+              kernel-workspace/build.log | tail -40
+          fi
+      
       - name: Upload Image
         uses: actions/upload-artifact@v4
         with:
