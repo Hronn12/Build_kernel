@@ -1,4 +1,4 @@
-name: Build peridot kernel (MiCode-only sources)
+name: Build amethyst kernel (MiCode-only sources)
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: peridot-micode-kernel-${{ github.ref }}
+  group: amethyst-micode-kernel-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -59,23 +59,6 @@ jobs:
           test -f "$WORKSPACE_DIR/msm-kernel/Makefile"
           test -f "$WORKSPACE_DIR/msm-kernel/build.config.constants"
           test -f "$WORKSPACE_DIR/msm-kernel/arch/arm64/configs/gki_defconfig"
-          test -f "$WORKSPACE_DIR/msm-kernel/arch/arm64/configs/vendor/pineapple_GKI.config"
-          test -f "$WORKSPACE_DIR/msm-kernel/arch/arm64/configs/vendor/peridot_GKI.config"
-
-      - name: Fix missing HWID Kconfig entry
-        working-directory: kernel-workspace/msm-kernel
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          sed -i \
-            '\|source "drivers/misc/hwid/Kconfig"|d' \
-            drivers/misc/Kconfig
-
-          if grep -q 'drivers/misc/hwid/Kconfig' drivers/misc/Kconfig; then
-            echo "HWID Kconfig entry was not removed"
-            exit 1
-          fi
       
       - name: Configure and compile Image
         shell: bash
@@ -105,9 +88,7 @@ jobs:
           KCONFIG_CONFIG="$OUT/.config" \
             "$SRC/scripts/kconfig/merge_config.sh" \
             -m -r -y -O "$OUT" \
-            "$OUT/.config" \
-            "$SRC/arch/arm64/configs/vendor/pineapple_GKI.config" \
-            "$SRC/arch/arm64/configs/vendor/peridot_GKI.config"
+            "$OUT/.config"
 
           make -C "$SRC" O="$OUT" \
             ARCH=arm64 LLVM=1 LLVM_IAS=1 \
@@ -119,8 +100,7 @@ jobs:
             ARCH=arm64 LLVM=1 LLVM_IAS=1 \
             CROSS_COMPILE=aarch64-linux-gnu- \
             CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
-            -j8 Image modules dtbs \
-            2>&1 | tee "$WORKSPACE_DIR/build.log"
+            -j8 Image modules
 
           test -s "$OUT/arch/arm64/boot/Image"
           mkdir -p "$WORKSPACE_DIR/dist"
@@ -128,23 +108,6 @@ jobs:
           install -m 0644 "$OUT/.config" "$WORKSPACE_DIR/dist/kernel.config"
           test -s "$WORKSPACE_DIR/dist/Image"
           sha256sum "$WORKSPACE_DIR/dist/Image" | tee "$WORKSPACE_DIR/dist/SHA256SUMS"
-
-      - name: Show remaining compiler error
-        if: always()
-        shell: bash
-        run: |
-          echo "=== Searching build logs ==="
-
-          find kernel-workspace -name "build.log" -type f -print
-
-          if [ -f kernel-workspace/build.log ]; then
-            grep -n -B 10 -A 10 "error:" \
-              kernel-workspace/build.log | tail -100 || true
-          else
-            echo "build.log not found!"
-            find kernel-workspace/out -type f \
-              \( -name "*.log" -o -name "*.cmd" \) | head -50
-          fi
       
       - name: Upload Image
         uses: actions/upload-artifact@v4
