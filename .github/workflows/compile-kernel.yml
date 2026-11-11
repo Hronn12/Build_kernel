@@ -19,8 +19,8 @@ jobs:
 
     env:
       WORKSPACE_DIR: ${{ github.workspace }}/kernel-workspace
-      KERNEL_REPO: https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git
-      KERNEL_BRANCH: peridot-u-oss
+      KERNEL_REPO: https://github.com/TheTechGuy69/techamethyst-kernel.git
+      KERNEL_BRANCH: kernel
       CLANG_VERSION: r487747c
 
     steps:
@@ -76,98 +76,6 @@ jobs:
             echo "HWID Kconfig entry was not removed"
             exit 1
           fi
-
-      - name: Fix missing HWID header include
-        working-directory: kernel-workspace/msm-kernel
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          FILE="drivers/soc/qcom/wcd939x-i2c.c"
-
-          grep -nF \
-            '#include "../../misc/hwid/hwid.h"' "$FILE"
-
-          sed -i \
-            '\|#include "../../misc/hwid/hwid.h"|d' \
-            "$FILE"
-
-          if grep -qF \
-            '#include "../../misc/hwid/hwid.h"' "$FILE"; then
-            echo "HWID include was not removed"
-            exit 1
-          fi
-
-          echo "HWID include successfully removed"
-      
-      - name: Fix ispv4_defs.h header dependencies
-        working-directory: kernel-workspace/msm-kernel
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          HDR=$(find . \
-            -path './usr/include/*' -prune -o \
-            -name 'ispv4_defs.h' -print -quit)
-
-          test -n "$HDR"
-          echo "Patching: $HDR"
-
-          python3 - "$HDR" <<'PY'
-          import sys
-          from pathlib import Path
-
-          path = Path(sys.argv[1])
-          data = path.read_text()
-
-          if "#include <stdint.h>" not in data:
-              data = "#include <stdint.h>\n" + data
-
-          if "#include <time.h>" not in data:
-              data = "#include <time.h>\n" + data
-
-          path.write_text(data)
-          PY
-
-          head -15 "$HDR"
-
-      - name: Fix ISPv4 UAPI header test
-        working-directory: kernel-workspace/msm-kernel
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          if ! grep -qF \
-            'no-header-test += media/ispv4_defs.h' \
-            usr/include/Makefile; then
-
-            sed -i \
-              '/^# More headers are broken/i no-header-test += media/ispv4_defs.h' \
-              usr/include/Makefile
-          fi
-
-          grep -nE 'videodev2|ispv4_defs' usr/include/Makefile
-
-      - name: Fix missing HWID header in DWC3
-        working-directory: kernel-workspace/msm-kernel
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          FILE="drivers/usb/dwc3/dwc3-msm-core.c"
-
-          grep -nF '#include "../../misc/hwid/hwid.h"' "$FILE"
-
-          sed -i \
-            '\|#include "../../misc/hwid/hwid.h"|d' \
-            "$FILE"
-
-          if grep -qF '#include "../../misc/hwid/hwid.h"' "$FILE"; then
-            echo "HWID include was not removed"
-            exit 1
-          fi
-
-          echo "Missing HWID include removed successfully"
       
       - name: Configure and compile Image
         shell: bash
