@@ -112,7 +112,7 @@ jobs:
       - name: Upload Image
         uses: actions/upload-artifact@v4
         with:
-          name: peridot-Image-${{ github.run_number }}
+          name: amethyst-Image-${{ github.run_number }}
           path: kernel-workspace/dist/**
           if-no-files-found: error
           compression-level: 0
