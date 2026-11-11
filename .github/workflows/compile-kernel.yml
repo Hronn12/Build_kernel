@@ -84,7 +84,7 @@ jobs:
             CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
             gki_defconfig
 
-          # Apply the device and SoC fragments used by MiCode's peridot GKI config.
+          # Apply the device and SoC fragments used by MiCode's GKI config.
           KCONFIG_CONFIG="$OUT/.config" \
             "$SRC/scripts/kconfig/merge_config.sh" \
             -m -r -y -O "$OUT" \
@@ -107,7 +107,6 @@ jobs:
           install -m 0644 "$OUT/arch/arm64/boot/Image" "$WORKSPACE_DIR/dist/Image"
           install -m 0644 "$OUT/.config" "$WORKSPACE_DIR/dist/kernel.config"
           test -s "$WORKSPACE_DIR/dist/Image"
-          sha256sum "$WORKSPACE_DIR/dist/Image" | tee "$WORKSPACE_DIR/dist/SHA256SUMS"
       
       - name: Upload Image
         uses: actions/upload-artifact@v4
